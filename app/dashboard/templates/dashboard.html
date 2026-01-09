@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Signal Extractor Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>📊 Signal Extractor</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                    <span class="icon">📈</span> Dashboard
+                </a>
+                <a href="#channels" class="nav-item" data-section="channels">
+                    <span class="icon">📡</span> Channels
+                </a>
+                <a href="#signals" class="nav-item" data-section="signals">
+                    <span class="icon">🎯</span> Signals
+                </a>
+                <a href="#logs" class="nav-item" data-section="logs">
+                    <span class="icon">📝</span> Logs
+                </a>
+                <a href="#errors" class="nav-item" data-section="errors">
+                    <span class="icon">⚠️</span> Errors
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/logout" class="logout-btn">🚪 Logout</a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <div class="status-indicator">
+                        <span id="status-dot" class="dot"></span>
+                        <span id="status-text">Loading...</span>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Signals</div>
+                            <div class="stat-value" id="total-signals">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Sent to Supabase</div>
+                            <div class="stat-value" id="sent-signals">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Pending</div>
+                            <div class="stat-value" id="pending-signals">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Failed</div>
+                            <div class="stat-value" id="failed-signals">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📡</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Active Channels</div>
+                            <div class="stat-value" id="active-channels">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Success Rate</div>
+                            <div class="stat-value" id="success-rate">0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Signals (24h)</h3>
+                        <div id="signals-24h" class="stat-value">0</div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Parsing Methods</h3>
+                        <div id="parsing-methods" class="method-list"></div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Channels Section -->
+            <section id="channels" class="section">
+                <div class="section-header">
+                    <h2>Channel Management</h2>
+                    <button class="btn btn-primary" id="add-channel-btn">+ Add Channel</button>
+                </div>
+                
+                <div id="channels-list" class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Channel Name</th>
+                                <th>Channel ID</th>
+                                <th>Total Signals</th>
+                                <th>Sent</th>
+                                <th>Pending</th>
+                                <th>Failed</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="channels-tbody">
+                            <tr><td colspan="8" class="text-center">Loading channels...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- Signals Section -->
+            <section id="signals" class="section">
+                <div class="section-header">
+                    <h2>Extracted Signals</h2>
+                    <div class="filters">
+                        <select id="signal-filter" class="filter-select">
+                            <option value="">All Signals</option>
+                            <option value="pending">Pending</option>
+                            <option value="sent">Sent</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="signals-list" class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Direction</th>
+                                <th>Entry</th>
+                                <th>SL</th>
+                                <th>TP1</th>
+                                <th>TP2</th>
+                                <th>TP3</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="signals-tbody">
+                            <tr><td colspan="10" class="text-center">Loading signals...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination">
+                    <button class="btn" id="prev-page">← Previous</button>
+                    <span id="page-info">Page 1</span>
+                    <button class="btn" id="next-page">Next →</button>
+                </div>
+            </section>
+            
+            <!-- Logs Section -->
+            <section id="logs" class="section">
+                <div class="section-header">
+                    <h2>System Logs</h2>
+                </div>
+                
+                <div id="logs-list" class="logs-container">
+                    <div class="text-center">Loading logs...</div>
+                </div>
+            </section>
+            
+            <!-- Errors Section -->
+            <section id="errors" class="section">
+                <div class="section-header">
+                    <h2>Parsing Errors</h2>
+                </div>
+                
+                <div id="errors-list" class="errors-container">
+                    <div class="text-center">Loading errors...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Modal for Adding Channel -->
+    <div id="channel-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Channel</h2>
+            <form id="add-channel-form">
+                <div class="form-group">
+                    <label for="channel-id">Channel ID</label>
+                    <input type="text" id="channel-id" required>
+                </div>
+                <div class="form-group">
+                    <label for="channel-name">Channel Name</label>
+                    <input type="text" id="channel-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="channel-username">Channel Username (optional)</label>
+                    <input type="text" id="channel-username">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Channel</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>
