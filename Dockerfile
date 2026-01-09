@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements
 COPY requirements.txt .
+# Cache buster - remove this line after successful build
+RUN echo "Cache bust: $(date)"
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
