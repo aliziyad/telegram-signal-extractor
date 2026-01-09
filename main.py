@@ -56,8 +56,16 @@ class SignalExtractorService:
         try:
             # Initialize database
             logger.info("📦 Initializing database...")
-            init_db()
-            logger.info("✓ Database initialized")
+            
+            # Check if database reset is requested
+            if os.getenv('RESET_DATABASE', '').lower() == 'true':
+                logger.warning("⚠️  RESET_DATABASE=true detected - Resetting database schema...")
+                from app.database.connection import reset_db
+                reset_db()
+                logger.info("✓ Database reset complete")
+            else:
+                init_db()
+                logger.info("✓ Database initialized")
             
             # Create Flask app
             logger.info("🌐 Creating Flask application...")
