@@ -147,7 +147,7 @@ class TelegramSignalExtractor:
                         channel_id=channel_id,
                         log_type="warning",
                         message=f"Failed to parse signal from message {message.id}",
-                        metadata={
+                        log_metadata={
                             "message_text": message.text[:200],
                             "parsing_attempts": ["regex", "claude", "gemini", "openai"]
                         }
@@ -164,7 +164,7 @@ class TelegramSignalExtractor:
                         channel_id=str(message.chat.id),
                         log_type="error",
                         message=f"Exception processing message: {str(e)}",
-                        metadata={"error_type": type(e).__name__}
+                        log_metadata={"error_type": type(e).__name__}
                     )
                     db.add(log_entry)
                     db.commit()

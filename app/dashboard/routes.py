@@ -292,7 +292,7 @@ def create_app():
                     "channel_id": log.channel_id,
                     "log_type": log.log_type,
                     "message": log.message,
-                    "metadata": log.metadata,
+                    "metadata": log.log_metadata,
                     "created_at": log.created_at.isoformat()
                 })
             

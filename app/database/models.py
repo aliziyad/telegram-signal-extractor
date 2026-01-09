@@ -114,7 +114,7 @@ class ExtractionLog(Base):
     channel_id = Column(String(255), ForeignKey("telegram_channels.channel_id"), nullable=True)
     log_type = Column(String(50), nullable=False, index=True)  # info, warning, error
     message = Column(Text, nullable=False)
-    metadata = Column(JSON, nullable=True)
+    log_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     
     # Relationships

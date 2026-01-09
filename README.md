@@ -21,7 +21,7 @@ A production-ready, scalable system for extracting trading signals from Telegram
 └──────────────────────────┬──────────────────────────────────┘
                            │
                 ┌──────────▼──────────┐
-                │  PyroFork Client    │ Real-time monitoring
+                │  Pyrogram Client    │ Real-time monitoring
                 │  (Async)            │ Multi-channel support
                 └──────────┬──────────┘
                            │
@@ -468,7 +468,7 @@ For issues and feature requests, please use GitHub Issues.
 
 ### v1.0.0 (2025-01-09)
 - Initial release
-- PyroFork Telegram monitoring
+- Pyrogram Telegram monitoring
 - Regex + AI parsing
 - Web dashboard
 - Supabase integration
