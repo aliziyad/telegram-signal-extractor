@@ -2,8 +2,8 @@ import asyncio
 import logging
 from datetime import datetime
 from typing import List, Optional
-from pyrofork import Client, filters
-from pyrofork.types import Message
+from pyrogram import Client, filters
+from pyrogram.types import Message
 from sqlalchemy.orm import Session
 from app.database.models import TelegramChannel, RawSignal, ParsedSignal, ExtractionLog
 from app.database.connection import SessionLocal
@@ -20,17 +20,18 @@ class TelegramSignalExtractor:
         self.channels_to_monitor = []
         
     async def initialize(self):
-        """Initialize Telegram client"""
+        """Initialize Telegram client with Pyrogram"""
         try:
             self.client = Client(
                 name="signal_extractor",
                 api_id=settings.TELEGRAM_API_ID,
                 api_hash=settings.TELEGRAM_API_HASH,
                 phone_number=settings.TELEGRAM_PHONE,
-                workdir="./sessions"
+                workdir="./sessions",
+                no_updates=False
             )
             
-            await self.client.connect()
+            await self.client.start()
             me = await self.client.get_me()
             logger.info(f"✓ Telegram client connected as {me.username or me.first_name}")
             
@@ -49,7 +50,7 @@ class TelegramSignalExtractor:
                 TelegramChannel.is_active == True
             ).all()
             
-            self.channels_to_monitor = [ch.channel_id for ch in channels]
+            self.channels_to_monitor = [int(ch.channel_id) for ch in channels]
             logger.info(f"Loaded {len(self.channels_to_monitor)} channels from database")
             
         except Exception as e:
@@ -67,9 +68,11 @@ class TelegramSignalExtractor:
         
         try:
             # Set up handlers for new messages
-            @self.client.on_message(filters.chat(self.channels_to_monitor))
+            @self.client.on_message(filters.chat(self.channels_to_monitor) & filters.text)
             async def on_new_message(client, message: Message):
                 await self.process_message(message)
+            
+            logger.info("Message handlers registered")
             
             # Keep the client running
             await self.client.idle()
@@ -107,7 +110,7 @@ class TelegramSignalExtractor:
                 # Parse signal
                 parsed_data, parsing_method = self.parser.parse_signal(
                     message.text,
-                    channel.title
+                    channel.title or "unknown"
                 )
                 
                 if parsed_data:
@@ -156,14 +159,17 @@ class TelegramSignalExtractor:
                     
             except Exception as e:
                 logger.error(f"Error processing message: {e}")
-                log_entry = ExtractionLog(
-                    channel_id=str(message.chat.id),
-                    log_type="error",
-                    message=f"Exception processing message: {str(e)}",
-                    metadata={"error_type": type(e).__name__}
-                )
-                db.add(log_entry)
-                db.commit()
+                try:
+                    log_entry = ExtractionLog(
+                        channel_id=str(message.chat.id),
+                        log_type="error",
+                        message=f"Exception processing message: {str(e)}",
+                        metadata={"error_type": type(e).__name__}
+                    )
+                    db.add(log_entry)
+                    db.commit()
+                except:
+                    pass
             finally:
                 db.close()
                 
@@ -202,7 +208,10 @@ class TelegramSignalExtractor:
                 logger.info(f"Channel {channel_name} added to monitoring")
             
             db.commit()
-            self.channels_to_monitor.append(channel_id)
+            try:
+                self.channels_to_monitor.append(int(channel_id))
+            except:
+                pass
             
         except Exception as e:
             logger.error(f"Failed to add channel: {e}")
@@ -221,8 +230,11 @@ class TelegramSignalExtractor:
             if channel:
                 channel.is_active = False
                 db.commit()
-                if channel_id in self.channels_to_monitor:
-                    self.channels_to_monitor.remove(channel_id)
+                try:
+                    if int(channel_id) in self.channels_to_monitor:
+                        self.channels_to_monitor.remove(int(channel_id))
+                except:
+                    pass
                 logger.info(f"Channel {channel.channel_name} removed from monitoring")
                 
         except Exception as e:
