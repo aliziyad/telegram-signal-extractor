@@ -1,0 +1,39 @@
+# Telegram Client (using pyrogram instead of unavailable pyrofork)
+pyrogram==1.4.16
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.10
+alembic==1.12.1
+
+# Web Framework
+flask==3.0.0
+flask-cors==4.0.0
+flask-sqlalchemy==3.1.1
+gunicorn==21.2.0
+waitress==2.1.2
+
+# API & HTTP
+requests==2.31.0
+aiohttp==3.9.1
+
+# AI APIs
+anthropic==0.21.0
+google-generativeai==0.3.0
+openai==1.4.0
+
+# Configuration & Utils
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+pytz==2023.3
+pyyaml==6.0.1
+
+# Data Processing
+regex==2023.12.25
+
+# Scheduling
+APScheduler==3.10.4
+
+# Environment
+python-telegram-bot==20.3
