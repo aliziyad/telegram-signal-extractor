@@ -134,14 +134,30 @@ class TelegramClientManager:
                     "error": "Telegram API credentials not configured. Please set TELEGRAM_API_ID and TELEGRAM_API_HASH in .env file"
                 }
             
-            # Create a new client for this phone number
+            # Fully disconnect and cleanup old client if exists
+            if self.client:
+                try:
+                    if self.client.is_connected:
+                        await self.client.disconnect()
+                except:
+                    pass
+                self.client = None
+            
+            # Remove any existing session files to force fresh auth
+            session_file = os.path.join(self.session_dir, "signal_extractor.session")
+            if os.path.exists(session_file):
+                os.remove(session_file)
+                logger.info("🗑️ Removed old session file")
+            
+            # Create a fresh client for this phone number
             self.client = Client(
                 name="signal_extractor",
                 api_id=int(self.api_id),
                 api_hash=self.api_hash,
                 phone_number=phone_number,
                 workdir=self.session_dir,
-                no_updates=False
+                no_updates=False,
+                in_memory=False
             )
             
             # Connect without starting auth flow
@@ -166,6 +182,13 @@ class TelegramClientManager:
             }
         except Exception as e:
             logger.error(f"❌ Failed to send code: {e}")
+            # If auth key duplicated error, tell user to wait and try again
+            error_str = str(e)
+            if "AUTH_KEY_DUPLICATED" in error_str:
+                return {
+                    "success": False,
+                    "error": "Session conflict detected. Please wait a moment and try again."
+                }
             return {
                 "success": False,
                 "error": str(e)
