@@ -124,7 +124,7 @@ class TelegramClientManager:
         """Send verification code to phone number"""
         try:
             # Reload env variables
-            load_dotenv(override=True)
+            load_dotenv()
             self.api_id = os.getenv("TELEGRAM_API_ID", "")
             self.api_hash = os.getenv("TELEGRAM_API_HASH", "")
             
