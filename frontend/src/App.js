@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Activity, Radio, Wifi, WifiOff, RefreshCw, Send, Eye, EyeOff,
-  TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock, XCircle,
-  LogOut, BarChart3, Zap, Phone, Key, Lock, Copy, Check, Users, Filter
+  TrendingUp, TrendingDown, CheckCircle, Clock, XCircle,
+  LogOut, BarChart3, Zap, Phone, Key, Lock, Copy, Check, Users, Filter,
+  ChevronLeft, ChevronRight, Sun, Moon, User, Shield
 } from 'lucide-react';
 import "@/App.css";
 
@@ -44,6 +45,15 @@ const api = {
   }
 };
 
+// Theme Context
+const ThemeContext = React.createContext();
+
+// Auth credentials (in production, this should be server-side)
+const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: 'FastSignal@2025!'
+};
+
 // Copy to clipboard hook
 const useCopyToClipboard = () => {
   const [copiedId, setCopiedId] = useState(null);
@@ -56,16 +66,16 @@ const useCopyToClipboard = () => {
 };
 
 // Status Badge Component
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, theme }) => {
   const styles = {
-    sent: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    pending: 'bg-amber-100 text-amber-700 border-amber-200',
-    failed: 'bg-red-100 text-red-700 border-red-200',
-    modified: 'bg-blue-100 text-blue-700 border-blue-200',
-    cancelled: 'bg-gray-100 text-gray-700 border-gray-200',
-    closed: 'bg-purple-100 text-purple-700 border-purple-200',
-    active: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    inactive: 'bg-gray-100 text-gray-500 border-gray-200'
+    sent: theme === 'dark' ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    pending: theme === 'dark' ? 'bg-amber-900/50 text-amber-400 border-amber-700' : 'bg-amber-100 text-amber-700 border-amber-200',
+    failed: theme === 'dark' ? 'bg-red-900/50 text-red-400 border-red-700' : 'bg-red-100 text-red-700 border-red-200',
+    modified: theme === 'dark' ? 'bg-blue-900/50 text-blue-400 border-blue-700' : 'bg-blue-100 text-blue-700 border-blue-200',
+    cancelled: theme === 'dark' ? 'bg-gray-800 text-gray-400 border-gray-600' : 'bg-gray-100 text-gray-700 border-gray-200',
+    closed: theme === 'dark' ? 'bg-purple-900/50 text-purple-400 border-purple-700' : 'bg-purple-100 text-purple-700 border-purple-200',
+    active: theme === 'dark' ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    inactive: theme === 'dark' ? 'bg-gray-800 text-gray-500 border-gray-600' : 'bg-gray-100 text-gray-500 border-gray-200'
   };
   return (
     <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${styles[status] || styles.pending}`}>
@@ -75,14 +85,14 @@ const StatusBadge = ({ status }) => {
 };
 
 // Channel Type Badge
-const ChannelTypeBadge = ({ type }) => {
+const ChannelTypeBadge = ({ type, theme }) => {
   const styles = {
-    channel: 'bg-blue-100 text-blue-700',
-    supergroup: 'bg-purple-100 text-purple-700',
-    group: 'bg-green-100 text-green-700'
+    channel: theme === 'dark' ? 'bg-blue-900/50 text-blue-400' : 'bg-blue-100 text-blue-700',
+    supergroup: theme === 'dark' ? 'bg-purple-900/50 text-purple-400' : 'bg-purple-100 text-purple-700',
+    group: theme === 'dark' ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-700'
   };
   return (
-    <span className={`px-2 py-0.5 text-xs font-medium rounded ${styles[type] || 'bg-gray-100 text-gray-600'}`}>
+    <span className={`px-2 py-0.5 text-xs font-medium rounded ${styles[type] || (theme === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600')}`}>
       {type?.toUpperCase()}
     </span>
   );
@@ -93,32 +103,135 @@ const ToggleSwitch = ({ enabled, onChange, loading }) => (
   <button
     onClick={onChange}
     disabled={loading}
-    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
-      enabled ? 'bg-emerald-500' : 'bg-gray-300'
+    className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
+      enabled ? 'bg-emerald-500' : 'bg-gray-600'
     } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
   >
-    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-8' : 'translate-x-1'}`} />
+    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-7' : 'translate-x-1'}`} />
   </button>
 );
 
 // Stat Card Component
-const StatCard = ({ icon: Icon, label, value, subtext }) => (
-  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-    <div className="flex items-center gap-4">
-      <div className="p-3 rounded-lg bg-indigo-100">
-        <Icon className="w-6 h-6 text-indigo-600" />
+const StatCard = ({ icon: Icon, label, value, subtext, theme }) => (
+  <div className={`rounded-xl p-4 border transition-all hover:scale-[1.02] ${
+    theme === 'dark' 
+      ? 'bg-[#1e2329] border-gray-700/50 hover:border-emerald-500/50' 
+      : 'bg-white border-gray-200 hover:border-emerald-500/50 shadow-sm'
+  }`}>
+    <div className="flex items-center gap-3">
+      <div className={`p-2.5 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
+        <Icon className={`w-5 h-5 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`} />
       </div>
       <div>
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-2xl font-bold text-gray-800">{value}</p>
-        {subtext && <p className="text-xs text-gray-400">{subtext}</p>}
+        <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>{label}</p>
+        <p className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{value}</p>
+        {subtext && <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>{subtext}</p>}
       </div>
     </div>
   </div>
 );
 
-// Auth Modal Component
-const AuthModal = ({ isOpen, onClose, onSuccess }) => {
+// Login Screen Component
+const LoginScreen = ({ onLogin, theme, toggleTheme }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    // Simulate auth delay
+    await new Promise(r => setTimeout(r, 500));
+    
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+      localStorage.setItem('fastsignal_auth', JSON.stringify({ username, timestamp: Date.now() }));
+      onLogin(true);
+    } else {
+      setError('Invalid credentials');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-[#0f1419]' : 'bg-gray-100'}`}>
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={toggleTheme}
+          className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-50 shadow'}`}
+        >
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+      </div>
+      
+      <div className={`w-full max-w-md p-8 rounded-2xl ${theme === 'dark' ? 'bg-[#1a1d21] border border-gray-800' : 'bg-white shadow-xl'}`}>
+        <div className="text-center mb-8">
+          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
+            <Zap className={`w-8 h-8 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`} />
+          </div>
+          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>FastSignal Admin</h1>
+          <p className={`mt-2 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>Sign in to access the dashboard</p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Username</label>
+            <div className="relative">
+              <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
+                  theme === 'dark' 
+                    ? 'bg-[#0f1419] border-gray-700 text-white placeholder-gray-600 focus:border-emerald-500' 
+                    : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400 focus:border-emerald-500'
+                } focus:outline-none focus:ring-1 focus:ring-emerald-500`}
+                placeholder="Enter username"
+              />
+            </div>
+          </div>
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Password</label>
+            <div className="relative">
+              <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
+                  theme === 'dark' 
+                    ? 'bg-[#0f1419] border-gray-700 text-white placeholder-gray-600 focus:border-emerald-500' 
+                    : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400 focus:border-emerald-500'
+                } focus:outline-none focus:ring-1 focus:ring-emerald-500`}
+                placeholder="Enter password"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !username || !password}
+            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Telegram Auth Modal Component
+const TelegramAuthModal = ({ isOpen, onClose, onSuccess, theme }) => {
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
@@ -179,21 +292,23 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Lock className="w-5 h-5 text-indigo-600" />
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
+      <div className={`w-full max-w-md p-6 rounded-2xl ${theme === 'dark' ? 'bg-[#1a1d21] border border-gray-800' : 'bg-white shadow-xl'}`}>
+        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+          <Lock className="w-5 h-5 text-emerald-500" />
           Telegram Authentication
         </h2>
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>}
+        {error && <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-3 rounded-lg mb-4 text-sm">{error}</div>}
         {step === 'phone' && (
           <div>
-            <p className="text-gray-600 mb-4">Enter your phone number with country code</p>
-            <div className="flex items-center gap-2 mb-4">
-              <Phone className="w-5 h-5 text-gray-400" />
-              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1234567890" className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+            <p className={`mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Enter your phone number with country code</p>
+            <div className="relative mb-4">
+              <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1234567890"
+                className={`w-full pl-10 pr-4 py-3 rounded-lg border ${theme === 'dark' ? 'bg-[#0f1419] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-800'} focus:outline-none focus:ring-1 focus:ring-emerald-500`} />
             </div>
-            <button onClick={sendCode} disabled={loading || !phone} className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={sendCode} disabled={loading || !phone}
+              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Send Code
             </button>
@@ -201,12 +316,14 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
         )}
         {step === 'code' && (
           <div>
-            <p className="text-gray-600 mb-4">Enter the verification code sent to {phone}</p>
-            <div className="flex items-center gap-2 mb-4">
-              <Key className="w-5 h-5 text-gray-400" />
-              <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="12345" className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-center text-2xl tracking-widest" />
+            <p className={`mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Enter the verification code sent to {phone}</p>
+            <div className="relative mb-4">
+              <Key className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+              <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="12345"
+                className={`w-full pl-10 pr-4 py-3 rounded-lg border text-center text-2xl tracking-widest ${theme === 'dark' ? 'bg-[#0f1419] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-800'} focus:outline-none focus:ring-1 focus:ring-emerald-500`} />
             </div>
-            <button onClick={verifyCode} disabled={loading || !code} className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={verifyCode} disabled={loading || !code}
+              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               Verify Code
             </button>
@@ -214,18 +331,20 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
         )}
         {step === 'password' && (
           <div>
-            <p className="text-gray-600 mb-4">Enter your 2FA password</p>
-            <div className="flex items-center gap-2 mb-4">
-              <Lock className="w-5 h-5 text-gray-400" />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your 2FA password" className="flex-1 px-4 py-2 border border-gray-200 rounded-lg" />
+            <p className={`mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Enter your 2FA password</p>
+            <div className="relative mb-4">
+              <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your 2FA password"
+                className={`w-full pl-10 pr-4 py-3 rounded-lg border ${theme === 'dark' ? 'bg-[#0f1419] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-800'} focus:outline-none focus:ring-1 focus:ring-emerald-500`} />
             </div>
-            <button onClick={verifyPassword} disabled={loading || !password} className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={verifyPassword} disabled={loading || !password}
+              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               Verify Password
             </button>
           </div>
         )}
-        <button onClick={onClose} className="w-full mt-3 py-2 text-gray-500 hover:text-gray-700">Cancel</button>
+        <button onClick={onClose} className={`w-full mt-3 py-2 ${theme === 'dark' ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}>Cancel</button>
       </div>
     </div>
   );
@@ -233,6 +352,9 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
 
 // Main App Component
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [theme, setTheme] = useState('dark');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState(null);
   const [monitoredChannels, setMonitoredChannels] = useState([]);
@@ -248,6 +370,45 @@ function App() {
   const [totalSignalPages, setTotalSignalPages] = useState(1);
   const [togglingChannels, setTogglingChannels] = useState({});
   const { copiedId, copy } = useCopyToClipboard();
+
+  // Check auth on mount
+  useEffect(() => {
+    const auth = localStorage.getItem('fastsignal_auth');
+    if (auth) {
+      const { timestamp } = JSON.parse(auth);
+      // Session expires after 24 hours
+      if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+        setIsAuthenticated(true);
+      } else {
+        localStorage.removeItem('fastsignal_auth');
+      }
+    }
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('fastsignal_theme');
+    if (savedTheme) setTheme(savedTheme);
+    
+    // Load sidebar state
+    const savedSidebar = localStorage.getItem('fastsignal_sidebar');
+    if (savedSidebar) setSidebarCollapsed(savedSidebar === 'collapsed');
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('fastsignal_theme', newTheme);
+  };
+
+  const toggleSidebar = () => {
+    const newState = !sidebarCollapsed;
+    setSidebarCollapsed(newState);
+    localStorage.setItem('fastsignal_sidebar', newState ? 'collapsed' : 'expanded');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('fastsignal_auth');
+    setIsAuthenticated(false);
+  };
 
   const fetchSessionStatus = useCallback(async () => {
     try {
@@ -303,20 +464,20 @@ function App() {
   }, [signalPage, signalStatusFilter, signalChannelFilter]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     const init = async () => {
       setLoading(true);
       const status = await fetchSessionStatus();
       await fetchStats();
       await fetchMonitoredChannels();
-      if (status?.is_connected) {
-        await fetchAvailableChannels();
-      }
+      if (status?.is_connected) await fetchAvailableChannels();
       setLoading(false);
     };
     init();
-  }, [fetchSessionStatus, fetchStats, fetchMonitoredChannels, fetchAvailableChannels]);
+  }, [isAuthenticated, fetchSessionStatus, fetchStats, fetchMonitoredChannels, fetchAvailableChannels]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     const interval = setInterval(() => {
       fetchSessionStatus();
       if (activeTab === 'dashboard') fetchStats();
@@ -327,11 +488,11 @@ function App() {
       if (activeTab === 'signals') fetchSignals();
     }, 5000);
     return () => clearInterval(interval);
-  }, [activeTab, sessionStatus.is_connected, fetchSessionStatus, fetchStats, fetchMonitoredChannels, fetchAvailableChannels, fetchSignals]);
+  }, [isAuthenticated, activeTab, sessionStatus.is_connected, fetchSessionStatus, fetchStats, fetchMonitoredChannels, fetchAvailableChannels, fetchSignals]);
 
   useEffect(() => {
-    if (activeTab === 'signals') fetchSignals();
-  }, [activeTab, signalPage, signalStatusFilter, signalChannelFilter, fetchSignals]);
+    if (isAuthenticated && activeTab === 'signals') fetchSignals();
+  }, [isAuthenticated, activeTab, signalPage, signalStatusFilter, signalChannelFilter, fetchSignals]);
 
   const handleConnect = async () => {
     try {
@@ -420,12 +581,17 @@ function App() {
 
   const activeMonitoredChannels = useMemo(() => monitoredChannels.filter(c => c.is_active), [monitoredChannels]);
 
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={setIsAuthenticated} theme={theme} toggleTheme={toggleTheme} />;
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-[#0f1419]' : 'bg-gray-100'}`}>
         <div className="text-center">
-          <RefreshCw className="w-10 h-10 text-indigo-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+          <RefreshCw className={`w-10 h-10 animate-spin mx-auto mb-4 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`} />
+          <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Loading...</p>
         </div>
       </div>
     );
@@ -434,73 +600,120 @@ function App() {
   const activeMonitoredCount = monitoredChannels.filter(c => c.is_active).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className={`min-h-screen flex ${theme === 'dark' ? 'bg-[#0f1419]' : 'bg-gray-100'}`}>
       {/* Sidebar */}
-      <aside className="w-64 bg-gradient-to-b from-indigo-600 to-purple-700 text-white fixed h-full">
-        <div className="p-6">
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <Zap className="w-6 h-6" />
-            Signal Extractor
-          </h1>
+      <aside className={`${sidebarCollapsed ? 'w-16' : 'w-64'} ${theme === 'dark' ? 'bg-[#1a1d21] border-gray-800' : 'bg-white border-gray-200'} border-r fixed h-full transition-all duration-300 flex flex-col`}>
+        {/* Logo */}
+        <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'} flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2">
+              <div className={`p-1.5 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
+                <Zap className={`w-5 h-5 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`} />
+              </div>
+              <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>FastSignal</span>
+            </div>
+          )}
+          <button onClick={toggleSidebar} className={`p-1.5 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}>
+            {sidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </button>
         </div>
-        <nav className="px-4 space-y-1">
-          {[{ id: 'dashboard', icon: BarChart3, label: 'Dashboard' }, { id: 'channels', icon: Radio, label: 'Channels' }, { id: 'signals', icon: TrendingUp, label: 'Signals' }].map(item => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === item.id ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+
+        {/* Nav */}
+        <nav className="flex-1 p-2 space-y-1">
+          {[{ id: 'dashboard', icon: BarChart3, label: 'Dashboard' }, { id: 'channels', icon: Radio, label: 'Channels', badge: activeMonitoredCount }, { id: 'signals', icon: TrendingUp, label: 'Signals' }].map(item => (
+            <button key={item.id} onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${sidebarCollapsed ? 'justify-center' : ''} ${
+                activeTab === item.id 
+                  ? (theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700')
+                  : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800 hover:text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800')
+              }`}
+              title={sidebarCollapsed ? item.label : ''}
+            >
               <item.icon className="w-5 h-5" />
-              {item.label}
-              {item.id === 'channels' && activeMonitoredCount > 0 && <span className="ml-auto bg-white/20 px-2 py-0.5 rounded-full text-xs">{activeMonitoredCount}</span>}
+              {!sidebarCollapsed && (
+                <>
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>{item.badge}</span>}
+                </>
+              )}
             </button>
           ))}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/20">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-white/70">Telegram</span>
-            <span className={`flex items-center gap-1 text-sm ${sessionStatus.is_connected ? 'text-emerald-300' : 'text-red-300'}`}>
-              {sessionStatus.is_connected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-              {sessionStatus.is_connected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
+
+        {/* Connection Status */}
+        <div className={`p-3 border-t ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+          {!sidebarCollapsed && (
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>Telegram</span>
+              <span className={`flex items-center gap-1 text-xs ${sessionStatus.is_connected ? 'text-emerald-400' : 'text-red-400'}`}>
+                {sessionStatus.is_connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                {sessionStatus.is_connected ? 'Connected' : 'Offline'}
+              </span>
+            </div>
+          )}
           {sessionStatus.is_connected ? (
-            <div className="space-y-2">
-              <button onClick={toggleMonitoring} className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${sessionStatus.is_monitoring ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
-                {sessionStatus.is_monitoring ? <><EyeOff className="w-4 h-4" /> Stop Monitoring</> : <><Eye className="w-4 h-4" /> Start Monitoring</>}
+            <div className={`space-y-2 ${sidebarCollapsed ? 'flex flex-col items-center' : ''}`}>
+              <button onClick={toggleMonitoring} title={sessionStatus.is_monitoring ? 'Stop' : 'Start'}
+                className={`${sidebarCollapsed ? 'p-2' : 'w-full py-2 px-3'} rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
+                  sessionStatus.is_monitoring ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                }`}>
+                {sessionStatus.is_monitoring ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {!sidebarCollapsed && (sessionStatus.is_monitoring ? 'Stop' : 'Start')}
               </button>
-              <button onClick={handleDisconnect} className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
-                <LogOut className="w-4 h-4" /> Disconnect
-              </button>
+              {!sidebarCollapsed && (
+                <button onClick={handleDisconnect} className={`w-full py-2 rounded-lg text-sm flex items-center justify-center gap-2 ${theme === 'dark' ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-800'}`}>
+                  <LogOut className="w-4 h-4" /> Disconnect
+                </button>
+              )}
             </div>
           ) : (
-            <button onClick={handleConnect} className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
-              <Wifi className="w-4 h-4" /> Connect
+            <button onClick={handleConnect} title="Connect"
+              className={`${sidebarCollapsed ? 'p-2' : 'w-full py-2'} bg-emerald-500 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-600`}>
+              <Wifi className="w-4 h-4" />
+              {!sidebarCollapsed && 'Connect'}
             </button>
           )}
+        </div>
+
+        {/* Bottom Actions */}
+        <div className={`p-3 border-t ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'} space-y-2`}>
+          <button onClick={toggleTheme} title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            className={`${sidebarCollapsed ? 'w-full p-2 justify-center' : 'w-full py-2 px-3'} rounded-lg text-sm flex items-center gap-2 ${theme === 'dark' ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-600 hover:bg-gray-100'}`}>
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {!sidebarCollapsed && (theme === 'dark' ? 'Light Mode' : 'Dark Mode')}
+          </button>
+          <button onClick={handleLogout} title="Sign Out"
+            className={`${sidebarCollapsed ? 'w-full p-2 justify-center' : 'w-full py-2 px-3'} rounded-lg text-sm flex items-center gap-2 ${theme === 'dark' ? 'text-red-400 hover:bg-red-500/20' : 'text-red-600 hover:bg-red-50'}`}>
+            <LogOut className="w-4 h-4" />
+            {!sidebarCollapsed && 'Sign Out'}
+          </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
+      <main className={`flex-1 p-6 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && stats && (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
+              <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Dashboard</h2>
               {sessionStatus.is_monitoring && (
-                <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full text-sm font-medium">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
                   Monitoring Active
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <StatCard icon={BarChart3} label="Total Signals" value={stats.total_signals} />
-              <StatCard icon={CheckCircle} label="Sent" value={stats.sent_signals} />
-              <StatCard icon={Clock} label="Pending" value={stats.pending_signals} />
-              <StatCard icon={XCircle} label="Failed" value={stats.failed_signals} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <StatCard icon={BarChart3} label="Total Signals" value={stats.total_signals} theme={theme} />
+              <StatCard icon={CheckCircle} label="Sent" value={stats.sent_signals} theme={theme} />
+              <StatCard icon={Clock} label="Pending" value={stats.pending_signals} theme={theme} />
+              <StatCard icon={XCircle} label="Failed" value={stats.failed_signals} theme={theme} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <StatCard icon={Radio} label="Active Channels" value={stats.active_channels} subtext={`of ${stats.total_channels} total`} />
-              <StatCard icon={Activity} label="Today's Signals" value={stats.signals_today} />
-              <StatCard icon={TrendingUp} label="Success Rate" value={`${stats.success_rate}%`} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard icon={Radio} label="Active Channels" value={stats.active_channels} subtext={`of ${stats.total_channels} total`} theme={theme} />
+              <StatCard icon={Activity} label="Today's Signals" value={stats.signals_today} theme={theme} />
+              <StatCard icon={TrendingUp} label="Success Rate" value={`${stats.success_rate}%`} theme={theme} />
             </div>
           </div>
         )}
@@ -510,57 +723,57 @@ function App() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">Channel Management</h2>
-                <p className="text-gray-500 mt-1">Toggle monitoring for your Telegram channels.</p>
+                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Channels</h2>
+                <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>Manage monitored channels</p>
               </div>
               {sessionStatus.is_connected && (
-                <button onClick={fetchAvailableChannels} disabled={channelsLoading} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2">
+                <button onClick={fetchAvailableChannels} disabled={channelsLoading}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${theme === 'dark' ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-800 hover:bg-gray-50 shadow'}`}>
                   <RefreshCw className={`w-4 h-4 ${channelsLoading ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
               )}
             </div>
             {!sessionStatus.is_connected ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
-                <WifiOff className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-amber-800 mb-2">Not Connected</h3>
-                <p className="text-amber-700 mb-4">Connect to Telegram to view and manage your channels</p>
-                <button onClick={handleConnect} className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">Connect to Telegram</button>
-              </div>
-            ) : channelsLoading && availableChannels.length === 0 ? (
-              <div className="text-center py-12">
-                <RefreshCw className="w-10 h-10 text-indigo-600 animate-spin mx-auto mb-4" />
-                <p className="text-gray-600">Fetching your channels...</p>
+              <div className={`rounded-xl p-8 text-center border ${theme === 'dark' ? 'bg-[#1e2329] border-gray-800' : 'bg-white border-gray-200'}`}>
+                <WifiOff className={`w-12 h-12 mx-auto mb-4 ${theme === 'dark' ? 'text-gray-600' : 'text-gray-400'}`} />
+                <h3 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Not Connected</h3>
+                <p className={`mb-4 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>Connect to Telegram to manage channels</p>
+                <button onClick={handleConnect} className="px-6 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600">Connect</button>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-4 text-white flex items-center justify-between">
+                <div className={`rounded-xl p-4 border ${theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'}`}>
                   <div className="flex items-center gap-3">
-                    <Users className="w-6 h-6" />
-                    <div><span className="font-bold text-lg">{activeMonitoredCount}</span><span className="ml-2">channels actively monitored</span></div>
+                    <Users className={theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'} />
+                    <span className={theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}>
+                      <strong>{activeMonitoredCount}</strong> channels actively monitored • {getCombinedChannels.length} total
+                    </span>
                   </div>
-                  <div className="text-white/80">{getCombinedChannels.length} total channels</div>
                 </div>
+                {/* Monitored */}
                 {activeMonitoredCount > 0 && (
-                  <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl overflow-hidden">
-                    <div className="bg-emerald-100 px-6 py-3 border-b border-emerald-200">
-                      <h3 className="font-bold text-emerald-800 flex items-center gap-2"><Eye className="w-5 h-5" />Monitored Channels ({activeMonitoredCount})</h3>
+                  <div className={`rounded-xl border overflow-hidden ${theme === 'dark' ? 'bg-[#1e2329] border-emerald-500/30' : 'bg-white border-emerald-200'}`}>
+                    <div className={`px-4 py-3 border-b ${theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'}`}>
+                      <h3 className={`font-semibold flex items-center gap-2 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                        <Eye className="w-4 h-4" /> Monitored ({activeMonitoredCount})
+                      </h3>
                     </div>
-                    <div className="divide-y divide-emerald-100">
+                    <div className="divide-y divide-gray-800/50">
                       {getCombinedChannels.filter(c => c.isMonitored).map(channel => (
-                        <div key={channel.channel_id} className="px-6 py-4 flex items-center justify-between hover:bg-emerald-100/50">
+                        <div key={channel.channel_id} className={`px-4 py-3 flex items-center justify-between ${theme === 'dark' ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'}`}>
                           <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <p className="font-bold text-gray-800">{channel.channel_name}</p>
-                              <ChannelTypeBadge type={channel.channel_type} />
+                            <div className="flex items-center gap-2">
+                              <span className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{channel.channel_name}</span>
+                              <ChannelTypeBadge type={channel.channel_type} theme={theme} />
                             </div>
-                            <div className="flex items-center gap-4 mt-1">
-                              <code className="text-xs bg-white px-2 py-0.5 rounded font-mono text-gray-600 border">{channel.channel_id}</code>
-                              <button onClick={() => copy(channel.channel_id, channel.channel_id)} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                            <div className="flex items-center gap-3 mt-1">
+                              <code className={`text-xs px-1.5 py-0.5 rounded ${theme === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>{channel.channel_id}</code>
+                              <button onClick={() => copy(channel.channel_id, channel.channel_id)} className="text-xs text-emerald-500 hover:text-emerald-400 flex items-center gap-1">
                                 {copiedId === channel.channel_id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                {copiedId === channel.channel_id ? 'Copied!' : 'Copy ID'}
+                                {copiedId === channel.channel_id ? 'Copied' : 'Copy'}
                               </button>
-                              {channel.monitoredData && <span className="text-xs text-emerald-700 font-medium">{channel.monitoredData.total_signals || 0} signals</span>}
+                              {channel.monitoredData && <span className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>{channel.monitoredData.total_signals || 0} signals</span>}
                             </div>
                           </div>
                           <ToggleSwitch enabled={true} loading={togglingChannels[channel.channel_id]} onChange={() => toggleChannelMonitoring(channel, true)} />
@@ -569,19 +782,22 @@ function App() {
                     </div>
                   </div>
                 )}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="bg-gray-50 px-6 py-3 border-b border-gray-100">
-                    <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Radio className="w-5 h-5 text-gray-500" />Available Channels ({getCombinedChannels.filter(c => !c.isMonitored).length})</h3>
+                {/* Available */}
+                <div className={`rounded-xl border overflow-hidden ${theme === 'dark' ? 'bg-[#1e2329] border-gray-800' : 'bg-white border-gray-200'}`}>
+                  <div className={`px-4 py-3 border-b ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <h3 className={`font-semibold flex items-center gap-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <Radio className="w-4 h-4" /> Available ({getCombinedChannels.filter(c => !c.isMonitored).length})
+                    </h3>
                   </div>
-                  <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
+                  <div className={`divide-y max-h-[400px] overflow-y-auto ${theme === 'dark' ? 'divide-gray-800/50' : 'divide-gray-100'}`}>
                     {getCombinedChannels.filter(c => !c.isMonitored).map(channel => (
-                      <div key={channel.channel_id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <p className="font-medium text-gray-700">{channel.channel_name}</p>
-                            <ChannelTypeBadge type={channel.channel_type} />
+                      <div key={channel.channel_id} className={`px-4 py-3 flex items-center justify-between ${theme === 'dark' ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'}`}>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>{channel.channel_name}</span>
+                            <ChannelTypeBadge type={channel.channel_type} theme={theme} />
                           </div>
-                          <code className="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono text-gray-500">{channel.channel_id}</code>
+                          <code className={`text-xs ${theme === 'dark' ? 'text-gray-600' : 'text-gray-400'}`}>{channel.channel_id}</code>
                         </div>
                         <ToggleSwitch enabled={false} loading={togglingChannels[channel.channel_id]} onChange={() => toggleChannelMonitoring(channel, false)} />
                       </div>
@@ -597,73 +813,71 @@ function App() {
         {activeTab === 'signals' && (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Extracted Signals</h2>
+              <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Signals</h2>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-400" />
-                  <select value={signalChannelFilter} onChange={(e) => { setSignalChannelFilter(e.target.value); setSignalPage(1); }} className="px-3 py-2 border border-gray-200 rounded-lg text-sm">
-                    <option value="">All Channels</option>
-                    {activeMonitoredChannels.map(ch => <option key={ch.channel_id} value={ch.channel_id}>{ch.channel_name}</option>)}
-                  </select>
-                </div>
-                <select value={signalStatusFilter} onChange={(e) => { setSignalStatusFilter(e.target.value); setSignalPage(1); }} className="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <Filter className={theme === 'dark' ? 'text-gray-500' : 'text-gray-400'} />
+                <select value={signalChannelFilter} onChange={(e) => { setSignalChannelFilter(e.target.value); setSignalPage(1); }}
+                  className={`px-3 py-2 rounded-lg text-sm ${theme === 'dark' ? 'bg-[#1e2329] border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'} border`}>
+                  <option value="">All Channels</option>
+                  {activeMonitoredChannels.map(ch => <option key={ch.channel_id} value={ch.channel_id}>{ch.channel_name}</option>)}
+                </select>
+                <select value={signalStatusFilter} onChange={(e) => { setSignalStatusFilter(e.target.value); setSignalPage(1); }}
+                  className={`px-3 py-2 rounded-lg text-sm ${theme === 'dark' ? 'bg-[#1e2329] border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'} border`}>
                   <option value="">All Status</option>
-                  <option value="pending">Pending</option>
                   <option value="sent">Sent</option>
+                  <option value="pending">Pending</option>
                   <option value="failed">Failed</option>
                 </select>
               </div>
             </div>
             {signals.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">No Signals Yet</h3>
-                <p className="text-gray-500 mb-4">{sessionStatus.is_monitoring ? 'Waiting for signals from monitored channels...' : 'Start monitoring to capture signals'}</p>
-                {!sessionStatus.is_monitoring && sessionStatus.is_connected && <button onClick={toggleMonitoring} className="px-6 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600">Start Monitoring</button>}
+              <div className={`rounded-xl p-12 text-center border ${theme === 'dark' ? 'bg-[#1e2329] border-gray-800' : 'bg-white border-gray-200'}`}>
+                <TrendingUp className={`w-16 h-16 mx-auto mb-4 ${theme === 'dark' ? 'text-gray-700' : 'text-gray-300'}`} />
+                <h3 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>No Signals</h3>
+                <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>{sessionStatus.is_monitoring ? 'Waiting for signals...' : 'Start monitoring to capture signals'}</p>
               </div>
             ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className={`rounded-xl border overflow-hidden ${theme === 'dark' ? 'bg-[#1e2329] border-gray-800' : 'bg-white border-gray-200'}`}>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className={theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50'}>
                       <tr>
-                        <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Channel</th>
-                        <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Symbol</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600">Direction</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-gray-600">Entry</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-gray-600">SL</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-gray-600">TP1</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600">Method</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600">Status</th>
-                        <th className="text-right px-4 py-3 text-sm font-semibold text-gray-600">Time</th>
+                        {['Channel', 'Symbol', 'Direction', 'Entry', 'SL', 'TP1', 'Method', 'Status', 'Time'].map(h => (
+                          <th key={h} className={`px-4 py-3 text-left text-xs font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{h}</th>
+                        ))}
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className={`divide-y ${theme === 'dark' ? 'divide-gray-800' : 'divide-gray-100'}`}>
                       {signals.map(signal => (
-                        <tr key={signal.id} className="border-b border-gray-50 hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-600">{signal.channel_name || 'Unknown'}</td>
-                          <td className="px-4 py-3 font-semibold text-gray-800">{signal.symbol || '-'}</td>
-                          <td className="text-center px-4 py-3">
-                            {signal.direction && <span className={`flex items-center justify-center gap-1 font-medium ${signal.direction === 'BUY' ? 'text-emerald-600' : 'text-red-600'}`}>
-                              {signal.direction === 'BUY' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}{signal.direction}
-                            </span>}
+                        <tr key={signal.id} className={theme === 'dark' ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'}>
+                          <td className={`px-4 py-3 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{signal.channel_name || '-'}</td>
+                          <td className={`px-4 py-3 font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{signal.symbol || '-'}</td>
+                          <td className="px-4 py-3">
+                            {signal.direction && (
+                              <span className={`flex items-center gap-1 font-medium ${signal.direction === 'BUY' ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {signal.direction === 'BUY' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                                {signal.direction}
+                              </span>
+                            )}
                           </td>
-                          <td className="text-right px-4 py-3 font-mono text-sm">{signal.entry_price?.toFixed(2) || '-'}</td>
-                          <td className="text-right px-4 py-3 font-mono text-sm text-red-600">{signal.stop_loss?.toFixed(2) || '-'}</td>
-                          <td className="text-right px-4 py-3 font-mono text-sm text-emerald-600">{signal.take_profit_1?.toFixed(2) || '-'}</td>
-                          <td className="text-center px-4 py-3"><span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-600 capitalize">{signal.parsing_method || '-'}</span></td>
-                          <td className="text-center px-4 py-3"><StatusBadge status={signal.status} /></td>
-                          <td className="text-right px-4 py-3 text-xs text-gray-500">{new Date(signal.created_at).toLocaleString()}</td>
+                          <td className={`px-4 py-3 font-mono text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{signal.entry_price?.toFixed(2) || '-'}</td>
+                          <td className="px-4 py-3 font-mono text-sm text-red-400">{signal.stop_loss?.toFixed(2) || '-'}</td>
+                          <td className="px-4 py-3 font-mono text-sm text-emerald-400">{signal.take_profit_1?.toFixed(2) || '-'}</td>
+                          <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs ${theme === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>{signal.parsing_method || '-'}</span></td>
+                          <td className="px-4 py-3"><StatusBadge status={signal.status} theme={theme} /></td>
+                          <td className={`px-4 py-3 text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>{new Date(signal.created_at).toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 {totalSignalPages > 1 && (
-                  <div className="flex items-center justify-center gap-4 p-4 border-t border-gray-100">
-                    <button onClick={() => setSignalPage(p => Math.max(1, p - 1))} disabled={signalPage === 1} className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50">Previous</button>
-                    <span className="text-sm text-gray-600">Page {signalPage} of {totalSignalPages}</span>
-                    <button onClick={() => setSignalPage(p => Math.min(totalSignalPages, p + 1))} disabled={signalPage >= totalSignalPages} className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50">Next</button>
+                  <div className={`flex items-center justify-center gap-4 p-4 border-t ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <button onClick={() => setSignalPage(p => Math.max(1, p - 1))} disabled={signalPage === 1}
+                      className={`px-4 py-2 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-800 text-white disabled:opacity-50' : 'bg-gray-100 text-gray-800 disabled:opacity-50'}`}>Previous</button>
+                    <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Page {signalPage} of {totalSignalPages}</span>
+                    <button onClick={() => setSignalPage(p => Math.min(totalSignalPages, p + 1))} disabled={signalPage >= totalSignalPages}
+                      className={`px-4 py-2 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-800 text-white disabled:opacity-50' : 'bg-gray-100 text-gray-800 disabled:opacity-50'}`}>Next</button>
                   </div>
                 )}
               </div>
@@ -672,7 +886,7 @@ function App() {
         )}
       </main>
 
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onSuccess={handleAuthSuccess} />
+      <TelegramAuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onSuccess={handleAuthSuccess} theme={theme} />
     </div>
   );
 }
