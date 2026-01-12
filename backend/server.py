@@ -94,6 +94,50 @@ app.add_middleware(
 )
 
 
+# ==================== Auth Models ====================
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+# ==================== Auth Routes ====================
+
+@app.post("/api/auth/login")
+async def login(request: LoginRequest):
+    """Admin login endpoint"""
+    if request.username == ADMIN_USERNAME and request.password == ADMIN_PASSWORD:
+        # Generate JWT token
+        payload = {
+            "sub": request.username,
+            "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
+            "iat": datetime.utcnow()
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
+        return {
+            "success": True,
+            "token": token,
+            "username": request.username,
+            "expires_in": JWT_EXPIRY_HOURS * 3600
+        }
+    else:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+
+@app.post("/api/auth/verify")
+async def verify_token(token: str = None):
+    """Verify JWT token validity"""
+    if not token:
+        raise HTTPException(status_code=401, detail="Token required")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        return {"valid": True, "username": payload.get("sub")}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
 # ==================== Health Check ====================
 
 @app.get("/api/health")
