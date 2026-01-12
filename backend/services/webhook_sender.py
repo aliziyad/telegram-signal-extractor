@@ -5,11 +5,11 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://zcdggtjwrtrqhqrngfau.supabase.co/functions/v1/fastsignal-webhook")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")
 WEBHOOK_API_KEY = os.getenv("WEBHOOK_API_KEY", "")
 
 
