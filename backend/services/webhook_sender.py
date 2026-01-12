@@ -23,9 +23,9 @@ class WebhookSender:
     
     def _reload_config(self):
         """Reload configuration from environment"""
-        load_dotenv(override=True)
+        load_dotenv()
         self.api_key = os.getenv("WEBHOOK_API_KEY", "")
-        self.webhook_url = os.getenv("WEBHOOK_URL", "https://zcdggtjwrtrqhqrngfau.supabase.co/functions/v1/fastsignal-webhook")
+        self.webhook_url = os.getenv("WEBHOOK_URL", "")
     
     async def send_signal(self, signal_data: Dict[str, Any]) -> Dict[str, Any]:
         """
