@@ -14,6 +14,23 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Hide "Made with Emergent" badge */
+[class*="made-with"], 
+[data-testid="emergent-badge"],
+div[style*="Made with"],
+a[href*="emergent"] > div,
+div:has(> span:contains("Made with Emergent")),
+.emergent-badge {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Also hide by position - bottom right corner badges */
+body > div:last-child[style*="fixed"][style*="bottom"][style*="right"] {
+  display: none !important;
+}
+
 /* Animations */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
