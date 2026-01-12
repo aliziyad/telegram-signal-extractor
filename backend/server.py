@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import asyncio
+import jwt
 from datetime import datetime, timedelta
 from typing import List, Optional
 from contextlib import asynccontextmanager
@@ -16,6 +17,13 @@ from dotenv import load_dotenv
 sys.path.insert(0, '/app')
 
 load_dotenv()
+
+# Load auth config from environment
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
+SECRET_KEY = os.environ.get("SECRET_KEY", "default-secret-key")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRY_HOURS = 24
 
 from backend.database.mongodb import connect_to_mongo, close_mongo_connection, get_database
 from backend.services.telegram_client import telegram_client
