@@ -48,11 +48,7 @@ const api = {
 // Theme Context
 const ThemeContext = React.createContext();
 
-// Auth credentials (in production, this should be server-side)
-const ADMIN_CREDENTIALS = {
-  username: 'admin',
-  password: 'FastSignal@2025!'
-};
+// Auth will be validated server-side
 
 // Copy to clipboard hook
 const useCopyToClipboard = () => {
@@ -143,14 +139,20 @@ const LoginScreen = ({ onLogin, theme, toggleTheme }) => {
     setLoading(true);
     setError('');
     
-    // Simulate auth delay
-    await new Promise(r => setTimeout(r, 500));
-    
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-      localStorage.setItem('fastsignal_auth', JSON.stringify({ username, timestamp: Date.now() }));
-      onLogin(true);
-    } else {
-      setError('Invalid credentials');
+    try {
+      const response = await api.post('/api/auth/login', { username, password });
+      if (response.success && response.token) {
+        localStorage.setItem('fastsignal_auth', JSON.stringify({ 
+          username, 
+          token: response.token,
+          timestamp: Date.now() 
+        }));
+        onLogin(true);
+      } else {
+        setError('Invalid credentials');
+      }
+    } catch (err) {
+      setError(err.message || 'Invalid credentials');
     }
     setLoading(false);
   };
