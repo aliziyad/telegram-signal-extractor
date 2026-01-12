@@ -152,7 +152,8 @@ const LoginScreen = ({ onLogin, theme, toggleTheme }) => {
         setError('Invalid credentials');
       }
     } catch (err) {
-      setError(err.message || 'Invalid credentials');
+      // Show user-friendly message instead of API error details
+      setError('Invalid credentials');
     }
     setLoading(false);
   };
