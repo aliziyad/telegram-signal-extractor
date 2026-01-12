@@ -115,6 +115,19 @@ class TelegramClientManager:
         except Exception as e:
             logger.error(f"❌ Connection failed: {e}")
             self.is_connected = False
+            error_str = str(e)
+            # Handle AUTH_KEY_DUPLICATED - suggest re-authentication
+            if "AUTH_KEY_DUPLICATED" in error_str:
+                # Remove the corrupted session file
+                session_file = os.path.join(self.session_dir, "signal_extractor.session")
+                if os.path.exists(session_file):
+                    os.remove(session_file)
+                self.client = None
+                return {
+                    "success": False,
+                    "needs_auth": True,
+                    "error": "Session expired. Please authenticate again with your phone number."
+                }
             return {
                 "success": False,
                 "error": str(e)
