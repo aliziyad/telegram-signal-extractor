@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # MongoDB connection - use localhost since MongoDB runs locally
 MONGO_URL = os.getenv("MONGO_URL") or "mongodb://localhost:27017"
-DATABASE_NAME = "telegram_signals"
+DATABASE_NAME = os.getenv("MONGO_DATABASE", "telegram_signals")
 
 # Async client for FastAPI
 async_client = None
