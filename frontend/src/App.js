@@ -376,26 +376,13 @@ function App() {
   // Hide "Made with Emergent" badge
   useEffect(() => {
     const hideBadge = () => {
-      // Find and hide any "Made with Emergent" elements
-      const allElements = document.querySelectorAll('*');
-      allElements.forEach(el => {
-        if (el.textContent && el.textContent.includes('Made with Emergent') && el.children.length <= 2) {
-          el.style.display = 'none';
-        }
-      });
-      // Also check for fixed position elements in bottom-right corner
-      document.querySelectorAll('div[style*="fixed"]').forEach(el => {
-        const style = window.getComputedStyle(el);
-        if (style.position === 'fixed' && style.bottom && style.right) {
-          if (el.textContent && el.textContent.includes('Emergent')) {
-            el.style.display = 'none';
-          }
-        }
-      });
+      const badge = document.getElementById('emergent-badge');
+      if (badge) {
+        badge.style.display = 'none';
+      }
     };
     hideBadge();
-    // Run periodically in case it's added dynamically
-    const interval = setInterval(hideBadge, 1000);
+    const interval = setInterval(hideBadge, 500);
     return () => clearInterval(interval);
   }, []);
 
