@@ -414,52 +414,58 @@ async def get_signals(
 ):
     """Get signals with pagination and filters"""
     db = get_database()
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not connected")
     
-    # Build query
-    query = {}
-    if status:
-        query["status"] = status
-    if channel_id:
-        query["channel_id"] = channel_id
-    
-    # Get total count
-    total = await db.signals.count_documents(query)
-    
-    # Get paginated results
-    skip = (page - 1) * limit
-    signals = await db.signals.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    
-    result = []
-    for signal in signals:
-        result.append({
-            "id": str(signal["_id"]),
-            "channel_id": signal["channel_id"],
-            "channel_name": signal.get("channel_name", "Unknown"),
-            "message_id": signal["message_id"],
-            "raw_message": signal.get("raw_message", ""),
-            "symbol": signal.get("symbol"),
-            "direction": signal.get("direction"),
-            "entry_price": signal.get("entry_price"),
-            "stop_loss": signal.get("stop_loss"),
-            "take_profit_1": signal.get("take_profit_1"),
-            "take_profit_2": signal.get("take_profit_2"),
-            "take_profit_3": signal.get("take_profit_3"),
-            "action_type": signal.get("action_type", "new"),
-            "parsing_method": signal.get("parsing_method"),
-            "confidence_score": signal.get("confidence_score", 1.0),
-            "status": signal.get("status", "pending"),
-            "error_message": signal.get("error_message"),
-            "created_at": signal.get("created_at", datetime.utcnow()).isoformat(),
-            "sent_at": signal.get("sent_at").isoformat() if signal.get("sent_at") else None
-        })
-    
-    return {
-        "signals": result,
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "pages": (total + limit - 1) // limit
-    }
+    try:
+        # Build query
+        query = {}
+        if status:
+            query["status"] = status
+        if channel_id:
+            query["channel_id"] = channel_id
+        
+        # Get total count
+        total = await db.signals.count_documents(query)
+        
+        # Get paginated results
+        skip = (page - 1) * limit
+        signals = await db.signals.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+        
+        result = []
+        for signal in signals:
+            result.append({
+                "id": str(signal["_id"]),
+                "channel_id": signal["channel_id"],
+                "channel_name": signal.get("channel_name", "Unknown"),
+                "message_id": signal["message_id"],
+                "raw_message": signal.get("raw_message", ""),
+                "symbol": signal.get("symbol"),
+                "direction": signal.get("direction"),
+                "entry_price": signal.get("entry_price"),
+                "stop_loss": signal.get("stop_loss"),
+                "take_profit_1": signal.get("take_profit_1"),
+                "take_profit_2": signal.get("take_profit_2"),
+                "take_profit_3": signal.get("take_profit_3"),
+                "action_type": signal.get("action_type", "new"),
+                "parsing_method": signal.get("parsing_method"),
+                "confidence_score": signal.get("confidence_score", 1.0),
+                "status": signal.get("status", "pending"),
+                "error_message": signal.get("error_message"),
+                "created_at": signal.get("created_at", datetime.utcnow()).isoformat(),
+                "sent_at": signal.get("sent_at").isoformat() if signal.get("sent_at") else None
+            })
+        
+        return {
+            "signals": result,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages": (total + limit - 1) // limit
+        }
+    except Exception as e:
+        logger.error(f"Error fetching signals: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 # ==================== Stats Routes ====================
