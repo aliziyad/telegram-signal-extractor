@@ -9,6 +9,29 @@ import "@/App.css";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 
+// Format date to UK style (dd/mm/yyyy) with 24hr time in MVT timezone (GMT+5)
+const formatDateMVT = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    // MVT is GMT+5, so we add 5 hours to UTC
+    const mvtOffset = 5 * 60; // 5 hours in minutes
+    const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
+    const mvtTime = new Date(utcTime + (mvtOffset * 60000));
+    
+    const day = mvtTime.getDate().toString().padStart(2, '0');
+    const month = (mvtTime.getMonth() + 1).toString().padStart(2, '0');
+    const year = mvtTime.getFullYear();
+    const hours = mvtTime.getHours().toString().padStart(2, '0');
+    const minutes = mvtTime.getMinutes().toString().padStart(2, '0');
+    const seconds = mvtTime.getSeconds().toString().padStart(2, '0');
+    
+    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+  } catch (e) {
+    return dateString;
+  }
+};
+
 // API Helper with timeout
 const api = {
   async get(endpoint, timeout = 30000) {
