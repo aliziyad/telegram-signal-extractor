@@ -1,5 +1,6 @@
 import os
 import logging
+from urllib.parse import urlparse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -8,9 +9,44 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# MongoDB connection - use localhost since MongoDB runs locally
+
+def extract_db_name_from_url(mongo_url: str) -> str:
+    """Extract database name from MongoDB connection string"""
+    try:
+        # Parse the URL
+        parsed = urlparse(mongo_url)
+        
+        # Get the path (database name is after the /)
+        path = parsed.path
+        if path and path.startswith('/'):
+            path = path[1:]
+        
+        # Remove any query parameters from the path
+        if '?' in path:
+            path = path.split('?')[0]
+        
+        # If we have a database name in the path, use it
+        if path and path != '':
+            return path
+        
+        # Otherwise return default
+        return "telegram_signals"
+    except Exception as e:
+        logger.warning(f"Could not parse database name from URL: {e}")
+        return "telegram_signals"
+
+
+# MongoDB connection - extract database name from URL for Atlas compatibility
 MONGO_URL = os.getenv("MONGO_URL") or "mongodb://localhost:27017"
-DATABASE_NAME = os.getenv("MONGO_DATABASE", "telegram_signals")
+
+# First check for explicit MONGO_DATABASE env var, then extract from URL
+_explicit_db = os.getenv("MONGO_DATABASE") or os.getenv("DB_NAME")
+if _explicit_db:
+    DATABASE_NAME = _explicit_db
+else:
+    DATABASE_NAME = extract_db_name_from_url(MONGO_URL)
+
+logger.info(f"Using MongoDB database: {DATABASE_NAME}")
 
 # Async client for FastAPI
 async_client = None
