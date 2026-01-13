@@ -239,19 +239,41 @@ async def get_available_channels():
 
 @app.get("/api/channels")
 async def get_monitored_channels():
-    """Get all monitored channels with stats"""
+    """Get all monitored channels with stats (optimized with aggregation)"""
     db = get_database()
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not connected")
+    
     channels = await db.channels.find().to_list(1000)
+    
+    if not channels:
+        return []
+    
+    # Get all channel IDs
+    channel_ids = [ch["channel_id"] for ch in channels]
+    
+    # Use aggregation to get stats for all channels in one query
+    stats_pipeline = [
+        {"$match": {"channel_id": {"$in": channel_ids}}},
+        {"$group": {
+            "_id": "$channel_id",
+            "total": {"$sum": 1},
+            "sent": {"$sum": {"$cond": [{"$eq": ["$status", "sent"]}, 1, 0]}},
+            "pending": {"$sum": {"$cond": [{"$eq": ["$status", "pending"]}, 1, 0]}},
+            "failed": {"$sum": {"$cond": [{"$eq": ["$status", "failed"]}, 1, 0]}}
+        }}
+    ]
+    
+    # Execute aggregation
+    stats_cursor = db.signals.aggregate(stats_pipeline)
+    stats_map = {}
+    async for stat in stats_cursor:
+        stats_map[stat["_id"]] = stat
     
     result = []
     for channel in channels:
-        # Get stats for each channel
         channel_id = channel["channel_id"]
-        
-        total = await db.signals.count_documents({"channel_id": channel_id})
-        sent = await db.signals.count_documents({"channel_id": channel_id, "status": "sent"})
-        pending = await db.signals.count_documents({"channel_id": channel_id, "status": "pending"})
-        failed = await db.signals.count_documents({"channel_id": channel_id, "status": "failed"})
+        stats = stats_map.get(channel_id, {"total": 0, "sent": 0, "pending": 0, "failed": 0})
         
         result.append({
             "id": str(channel["_id"]),
@@ -260,10 +282,10 @@ async def get_monitored_channels():
             "channel_username": channel.get("channel_username"),
             "channel_type": channel.get("channel_type"),
             "is_active": channel.get("is_active", True),
-            "total_signals": total,
-            "sent_signals": sent,
-            "pending_signals": pending,
-            "failed_signals": failed,
+            "total_signals": stats.get("total", 0),
+            "sent_signals": stats.get("sent", 0),
+            "pending_signals": stats.get("pending", 0),
+            "failed_signals": stats.get("failed", 0),
             "created_at": channel.get("created_at", datetime.utcnow()).isoformat(),
             "updated_at": channel.get("updated_at", datetime.utcnow()).isoformat()
         })
