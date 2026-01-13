@@ -46,6 +46,20 @@ logger = logging.getLogger(__name__)
 monitoring_task = None
 
 
+async def auto_connect_telegram():
+    """Background task to auto-connect to Telegram"""
+    try:
+        await asyncio.sleep(1)  # Small delay to let server start
+        result = await telegram_client.connect()
+        if result.get("success"):
+            logger.info("✅ Auto-connected to Telegram")
+            notification_service.set_client(telegram_client.client)
+        else:
+            logger.info(f"ℹ️ Auto-connect failed: {result.get('error', 'Unknown error')}")
+    except Exception as e:
+        logger.info(f"ℹ️ Auto-connect failed: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
