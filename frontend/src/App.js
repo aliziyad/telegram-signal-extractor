@@ -350,7 +350,7 @@ const TelegramAuthModal = ({ isOpen, onClose, onSuccess, theme }) => {
             <button onClick={sendCode} disabled={loading || !phone}
               className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Send Code
+              {loading ? 'Sending...' : 'Send Code'}
             </button>
           </div>
         )}
@@ -365,7 +365,7 @@ const TelegramAuthModal = ({ isOpen, onClose, onSuccess, theme }) => {
             <button onClick={verifyCode} disabled={loading || !code}
               className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-              Verify Code
+              {loading ? 'Verifying...' : 'Verify Code'}
             </button>
           </div>
         )}
@@ -380,7 +380,7 @@ const TelegramAuthModal = ({ isOpen, onClose, onSuccess, theme }) => {
             <button onClick={verifyPassword} disabled={loading || !password}
               className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-              Verify Password
+              {loading ? 'Verifying...' : 'Verify Password'}
             </button>
           </div>
         )}
