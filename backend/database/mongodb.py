@@ -77,34 +77,49 @@ async def connect_to_mongo():
 
 
 async def create_indexes():
-    """Create database indexes for better performance"""
+    """Create database indexes for better performance (non-blocking on errors)"""
     try:
         # Channels collection
-        await async_db.channels.create_index("channel_id", unique=True)
-        await async_db.channels.create_index("is_active")
+        try:
+            await async_db.channels.create_index("channel_id", unique=True)
+            await async_db.channels.create_index("is_active")
+        except Exception as e:
+            logger.debug(f"Channel indexes may already exist or not authorized: {e}")
         
         # Signals collection
-        await async_db.signals.create_index("channel_id")
-        await async_db.signals.create_index("message_id")
-        await async_db.signals.create_index("status")
-        await async_db.signals.create_index("created_at")
-        await async_db.signals.create_index([("channel_id", 1), ("message_id", 1)], unique=True)
+        try:
+            await async_db.signals.create_index("channel_id")
+            await async_db.signals.create_index("message_id")
+            await async_db.signals.create_index("status")
+            await async_db.signals.create_index("created_at")
+            await async_db.signals.create_index([("channel_id", 1), ("message_id", 1)], unique=True)
+        except Exception as e:
+            logger.debug(f"Signal indexes may already exist or not authorized: {e}")
         
         # Raw messages collection
-        await async_db.raw_messages.create_index("channel_id")
-        await async_db.raw_messages.create_index("message_id")
-        await async_db.raw_messages.create_index([("channel_id", 1), ("message_id", 1)], unique=True)
+        try:
+            await async_db.raw_messages.create_index("channel_id")
+            await async_db.raw_messages.create_index("message_id")
+            await async_db.raw_messages.create_index([("channel_id", 1), ("message_id", 1)], unique=True)
+        except Exception as e:
+            logger.debug(f"Raw message indexes may already exist or not authorized: {e}")
         
         # Session collection
-        await async_db.sessions.create_index("session_name", unique=True)
+        try:
+            await async_db.sessions.create_index("session_name", unique=True)
+        except Exception as e:
+            logger.debug(f"Session indexes may already exist or not authorized: {e}")
         
         # Logs collection
-        await async_db.logs.create_index("created_at")
-        await async_db.logs.create_index("log_type")
+        try:
+            await async_db.logs.create_index("created_at")
+            await async_db.logs.create_index("log_type")
+        except Exception as e:
+            logger.debug(f"Log indexes may already exist or not authorized: {e}")
         
-        logger.info("✅ Database indexes created")
+        logger.info("✅ Database indexes created/verified")
     except Exception as e:
-        logger.warning(f"Index creation warning: {e}")
+        logger.warning(f"Index creation warning (non-fatal): {e}")
 
 
 async def close_mongo_connection():
