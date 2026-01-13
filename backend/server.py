@@ -53,19 +53,11 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Starting Telegram Signal Extractor...")
     await connect_to_mongo()
     
-    # Try to auto-connect if session file exists
+    # Try to auto-connect if session file exists (non-blocking)
     session_file = "/app/backend/sessions/signal_extractor.session"
     if os.path.exists(session_file):
-        logger.info("📁 Session file found, attempting auto-connect...")
-        try:
-            result = await telegram_client.connect()
-            if result.get("success"):
-                logger.info("✅ Auto-connected to Telegram")
-                notification_service.set_client(telegram_client.client)
-            else:
-                logger.info(f"ℹ️ Auto-connect failed: {result.get('error', 'Unknown error')}")
-        except Exception as e:
-            logger.info(f"ℹ️ Auto-connect failed: {e}")
+        logger.info("📁 Session file found, will attempt auto-connect in background...")
+        asyncio.create_task(auto_connect_telegram())
     else:
         logger.info("ℹ️ No session file found - use UI to connect")
     
