@@ -941,7 +941,7 @@ function App() {
                           <td className="px-4 py-3 font-mono text-sm text-emerald-400">{signal.take_profit_1?.toFixed(2) || '-'}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs ${theme === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>{signal.parsing_method || '-'}</span></td>
                           <td className="px-4 py-3"><StatusBadge status={signal.status} theme={theme} /></td>
-                          <td className={`px-4 py-3 text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>{new Date(signal.created_at).toLocaleString()}</td>
+                          <td className={`px-4 py-3 text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>{formatDateMVT(signal.created_at)}</td>
                         </tr>
                       ))}
                     </tbody>
