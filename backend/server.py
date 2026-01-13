@@ -474,51 +474,83 @@ async def get_signals(
 async def get_dashboard_stats():
     """Get dashboard statistics"""
     db = get_database()
+    if db is None:
+        # Return empty stats if database not connected
+        return DashboardStats(
+            total_signals=0,
+            sent_signals=0,
+            pending_signals=0,
+            failed_signals=0,
+            active_channels=0,
+            total_channels=0,
+            signals_today=0,
+            success_rate=0,
+            parsing_methods=[],
+            is_monitoring=telegram_client.is_monitoring,
+            session_connected=telegram_client.is_connected
+        )
     
-    # Signal stats
-    total_signals = await db.signals.count_documents({})
-    sent_signals = await db.signals.count_documents({"status": "sent"})
-    pending_signals = await db.signals.count_documents({"status": "pending"})
-    failed_signals = await db.signals.count_documents({"status": "failed"})
-    
-    # Channel stats
-    total_channels = await db.channels.count_documents({})
-    active_channels = await db.channels.count_documents({"is_active": True})
-    
-    # Today's signals
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    signals_today = await db.signals.count_documents({"created_at": {"$gte": today_start}})
-    
-    # Parsing methods breakdown
-    pipeline = [
-        {"$group": {"_id": "$parsing_method", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}}
-    ]
-    methods_cursor = db.signals.aggregate(pipeline)
-    parsing_methods = []
-    async for method in methods_cursor:
-        if method["_id"]:
-            parsing_methods.append({
-                "method": method["_id"],
-                "count": method["count"]
-            })
-    
-    # Success rate
-    success_rate = (sent_signals / total_signals * 100) if total_signals > 0 else 0
-    
-    return DashboardStats(
-        total_signals=total_signals,
-        sent_signals=sent_signals,
-        pending_signals=pending_signals,
-        failed_signals=failed_signals,
-        active_channels=active_channels,
-        total_channels=total_channels,
-        signals_today=signals_today,
-        success_rate=round(success_rate, 2),
-        parsing_methods=parsing_methods,
-        is_monitoring=telegram_client.is_monitoring,
-        session_connected=telegram_client.is_connected
-    )
+    try:
+        # Signal stats
+        total_signals = await db.signals.count_documents({})
+        sent_signals = await db.signals.count_documents({"status": "sent"})
+        pending_signals = await db.signals.count_documents({"status": "pending"})
+        failed_signals = await db.signals.count_documents({"status": "failed"})
+        
+        # Channel stats
+        total_channels = await db.channels.count_documents({})
+        active_channels = await db.channels.count_documents({"is_active": True})
+        
+        # Today's signals
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        signals_today = await db.signals.count_documents({"created_at": {"$gte": today_start}})
+        
+        # Parsing methods breakdown
+        pipeline = [
+            {"$group": {"_id": "$parsing_method", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}}
+        ]
+        methods_cursor = db.signals.aggregate(pipeline)
+        parsing_methods = []
+        async for method in methods_cursor:
+            if method["_id"]:
+                parsing_methods.append({
+                    "method": method["_id"],
+                    "count": method["count"]
+                })
+        
+        # Success rate
+        success_rate = (sent_signals / total_signals * 100) if total_signals > 0 else 0
+        
+        return DashboardStats(
+            total_signals=total_signals,
+            sent_signals=sent_signals,
+            pending_signals=pending_signals,
+            failed_signals=failed_signals,
+            active_channels=active_channels,
+            total_channels=total_channels,
+            signals_today=signals_today,
+            success_rate=round(success_rate, 2),
+            parsing_methods=parsing_methods,
+            is_monitoring=telegram_client.is_monitoring,
+            session_connected=telegram_client.is_connected
+        )
+    except Exception as e:
+        logger.error(f"Error fetching stats: {e}")
+        # Return empty stats on error instead of crashing
+        return DashboardStats(
+            total_signals=0,
+            sent_signals=0,
+            pending_signals=0,
+            failed_signals=0,
+            active_channels=0,
+            total_channels=0,
+            signals_today=0,
+            success_rate=0,
+            parsing_methods=[],
+            is_monitoring=telegram_client.is_monitoring,
+            session_connected=telegram_client.is_connected
+        )
 
 
 if __name__ == "__main__":
