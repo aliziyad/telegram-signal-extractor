@@ -47,17 +47,18 @@ monitoring_task = None
 
 
 async def auto_connect_telegram():
-    """Background task to auto-connect to Telegram"""
+    """Background task to auto-connect to Telegram (gracefully handles failures)"""
     try:
-        await asyncio.sleep(1)  # Small delay to let server start
+        await asyncio.sleep(2)  # Small delay to let server start
         result = await telegram_client.connect()
         if result.get("success"):
             logger.info("✅ Auto-connected to Telegram")
             notification_service.set_client(telegram_client.client)
         else:
-            logger.info(f"ℹ️ Auto-connect failed: {result.get('error', 'Unknown error')}")
+            logger.info(f"ℹ️ Telegram auto-connect skipped: {result.get('error', 'Session not ready')}")
     except Exception as e:
-        logger.info(f"ℹ️ Auto-connect failed: {e}")
+        # Log as info, not error - this is expected in production without session
+        logger.info(f"ℹ️ Telegram auto-connect skipped: {e}")
 
 
 @asynccontextmanager
@@ -65,22 +66,33 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     logger.info("🚀 Starting Telegram Signal Extractor...")
-    await connect_to_mongo()
     
-    # Try to auto-connect if session file exists (non-blocking)
+    try:
+        await connect_to_mongo()
+    except Exception as e:
+        logger.error(f"❌ MongoDB connection failed: {e}")
+        # Continue anyway - let the app start and show errors on API calls
+    
+    # Try to auto-connect if session file exists (non-blocking, optional)
     session_file = "/app/backend/sessions/signal_extractor.session"
     if os.path.exists(session_file):
         logger.info("📁 Session file found, will attempt auto-connect in background...")
         asyncio.create_task(auto_connect_telegram())
     else:
-        logger.info("ℹ️ No session file found - use UI to connect")
+        logger.info("ℹ️ No Telegram session file - connect via UI when ready")
     
     yield
     
     # Shutdown
     logger.info("🛑 Shutting down...")
-    await telegram_client.disconnect()
-    await close_mongo_connection()
+    try:
+        await telegram_client.disconnect()
+    except Exception as e:
+        logger.debug(f"Disconnect warning: {e}")
+    try:
+        await close_mongo_connection()
+    except Exception as e:
+        logger.debug(f"MongoDB close warning: {e}")
 
 
 app = FastAPI(
